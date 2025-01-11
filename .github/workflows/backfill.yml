@@ -57,7 +57,7 @@ jobs:
           bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
           echo "::endgroup::"
           echo "::group::download-data"
-          ENDRANGE=$(date +%Y%m -d '${{ env.timerange }}01 + 1 month')
+          ENDRANGE=$(date -u +%Y%m -d '${{ env.timerange }}01 + 1 month')
           bash freqtrade.sh download-data --exchange ${{ matrix.exchange }} -p '.*/${{ matrix.stake }}' --timerange ${{ env.timerange }}01-${ENDRANGE}01 --timeframes ${{ matrix.timeframes }} ${{ matrix.extra || '' }}
           echo "::endgroup::"
           echo "::group::(after)list-data --show-timerange"
@@ -83,7 +83,7 @@ jobs:
       - id: info
         shell: bash
         run: |
-          timerange=$(date +%Y%m -d '${{ env.timerange }}01 - 1 month')
+          timerange=$(date -u +%Y%m -d '${{ env.timerange }}01 - 1 month')
           if [[ "${timerange}" != 2022* ]]; then
             echo "timerange=${timerange}" | tee -a ${GITHUB_OUTPUT}
           fi
