@@ -1,0 +1,76 @@
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/update.yml
+
+permissions:
+  contents: write
+  repository-projects: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { exchange: binanceus, stake: USDT, timeframes: '1m 3m 5m 15m 30m 1h 2h 4h 6h 8h 12h 1d' }
+          #- { exchange: bitcoincom, stake: USDT, timeframes: '1m 3m 5m 15m 30m 1h 4h 1d' }
+          #- { exchange: coinbase, stake: USDT, timeframes: '1m 5m 15m 30m 1h 2h 6h 1d' }
+          #- { exchange: kraken, stake: USD, timeframes: '1m 5m 15m 30m 1h 4h 1d', extra: '--dl-trades --erase' }
+          #- { exchange: kucoin, stake: USDT, timeframes: '1m 3m 5m 15m 30m 1h 2h 4h 6h 8h 12h 1d' }
+          #- { exchange: okx, stake: USDT, timeframes: '1m 3m 5m 15m 30m 1h 2h 4h 6h 12h 1d' }
+    steps:
+      - id: info
+        shell: bash
+        run: |
+          echo "timerange=$(date +%Y%m)" | tee -a ${GITHUB_OUTPUT}
+
+      - name: Git checkout
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 1
+
+      - name: Git checkout
+        uses: actions/checkout@main
+        continue-on-error: true
+        with:
+          fetch-depth: 1
+          ref: "data/${{ matrix.exchange }}/${{ matrix.stake }}/${{ steps.info.outputs.timerange }}"
+          path: user_data/data/${{ matrix.exchange }}
+
+      - name: Download
+        shell: bash
+        env:
+          EXCHANGE: ${{ matrix.exchange }}
+          STAKE: ${{ matrix.stake }}
+        run: |
+          echo "::group::(before)list-data --show-timerange"
+          bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
+          echo "::endgroup::"
+          echo "::group::download-data"
+          bash freqtrade.sh download-data --exchange ${{ matrix.exchange }} -p '.*/${{ matrix.stake }}' --timerange ${{ steps.info.outputs.timerange }}01- --timeframes ${{ matrix.timeframes }} ${{ matrix.extra || '' }}
+          echo "::endgroup::"
+          echo "::group::(after)list-data --show-timerange"
+          bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
+          echo "::endgroup::"
+
+      - name: Push changes
+        shell: bash
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          sudo chown -R $(id -u):$(id -g) user_data/data/${{ matrix.exchange }}
+          cd user_data/data/${{ matrix.exchange }}
+          if [[ $(git status --porcelain . | wc -l) -gt 0 ]]; then
+            git add .
+            git commit -m "ci: Autoupdate $(date -u +'%F %T')"
+            git push -u origin "$(git branch --show-current):data/${{ matrix.exchange }}/${{ matrix.stake }}/${{ steps.info.outputs.timerange }}"
+          fi
