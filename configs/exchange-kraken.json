@@ -1,0 +1,16 @@
+{
+  "stake_currency": "USD",
+  "exchange": {
+    "name": "kraken",
+    "key": "",
+    "secret": "",
+    "ccxt_config": {},
+    "ccxt_async_config": {},
+    "pair_whitelist": [
+      ".*/USDT",
+      ".*/USD"
+    ],
+    "pair_blacklist": [
+    ]
+  }
+}

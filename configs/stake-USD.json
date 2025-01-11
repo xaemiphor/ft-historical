@@ -1,0 +1,8 @@
+{
+  "stake_currency": "USD",
+  "exchange": {
+    "pair_whitelist": [
+      ".*/USD"
+    ]
+  }
+}
