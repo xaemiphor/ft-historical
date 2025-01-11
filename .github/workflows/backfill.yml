@@ -7,6 +7,7 @@ on:
   repository_dispatch:
     type:
       - backfill
+      - chain
 
 permissions:
   contents: write
@@ -20,7 +21,7 @@ env:
   timerange: ${{ github.event.client_payload.timerange || github.event.inputs.timerange }}
 
 jobs:
-  update:
+  backfill:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -56,7 +57,8 @@ jobs:
           bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
           echo "::endgroup::"
           echo "::group::download-data"
-          bash freqtrade.sh download-data --exchange ${{ matrix.exchange }} -p '.*/${{ matrix.stake }}' --timerange ${{ env.timerange }}01- --timeframes ${{ matrix.timeframes }} ${{ matrix.extra || '' }}
+          ENDRANGE=$(date +%Y%m -d '${{ env.timerange }}01 + 1 month')
+          bash freqtrade.sh download-data --exchange ${{ matrix.exchange }} -p '.*/${{ matrix.stake }}' --timerange ${{ env.timerange }}01-${ENDRANGE}01 --timeframes ${{ matrix.timeframes }} ${{ matrix.extra || '' }}
           echo "::endgroup::"
           echo "::group::(after)list-data --show-timerange"
           bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
@@ -76,21 +78,21 @@ jobs:
           fi
   dispatch:
     runs-on: ubuntu-latest
-    needs: [update]
+    needs: [backfill]
     steps:
       - id: info
         shell: bash
         run: |
           timerange=$(date +%Y%m -d '${{ env.timerange }}01 - 1 month')
-          if [[ "${timerange}" != 2023* ]]; then
+          if [[ "${timerange}" != 2022* ]]; then
             echo "timerange=${timerange}" | tee -a ${GITHUB_OUTPUT}
           fi
       - name: Repository Dispatch
         uses: peter-evans/repository-dispatch@main
-        if: steps.info.outputs.timerange != ''
+        if: steps.info.outputs.timerange != '' && (github.event.event_type == 'chain' || github.event_name == 'workflow_dispatch' )
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
-          event-type: backfill
+          event-type: chain
           client-payload: '{"timerange": "${{ steps.info.outputs.timerange }}"}'
 
