@@ -49,6 +49,8 @@ jobs:
 
       - name: Download
         shell: bash
+        continue-on-error: true
+        timeout-minutes: 330
         env:
           EXCHANGE: ${{ matrix.exchange }}
           STAKE: ${{ matrix.stake }}
