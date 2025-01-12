@@ -46,6 +46,16 @@ jobs:
           ref: "data/${{ matrix.exchange }}/${{ matrix.stake }}/${{ steps.info.outputs.timerange }}"
           path: user_data/data/${{ matrix.exchange }}
 
+      - name: (pre)list-data --show-timerange
+        shell: bash
+        env:
+          EXCHANGE: ${{ matrix.exchange }}
+          STAKE: ${{ matrix.stake }}
+        run: |
+          echo "::group::(pre)list-data --show-timerange"
+          bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
+          echo "::endgroup::"
+
       - name: Download
         shell: bash
         continue-on-error: true
@@ -54,13 +64,17 @@ jobs:
           EXCHANGE: ${{ matrix.exchange }}
           STAKE: ${{ matrix.stake }}
         run: |
-          echo "::group::(before)list-data --show-timerange"
-          bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
-          echo "::endgroup::"
           echo "::group::download-data"
           bash freqtrade.sh download-data --exchange ${{ matrix.exchange }} -p '.*/${{ matrix.stake }}' --timerange ${{ steps.info.outputs.timerange }}01- --timeframes ${{ matrix.timeframes }} ${{ matrix.extra || '' }}
           echo "::endgroup::"
-          echo "::group::(after)list-data --show-timerange"
+
+      - name: (post)list-data --show-timerange
+        shell: bash
+        env:
+          EXCHANGE: ${{ matrix.exchange }}
+          STAKE: ${{ matrix.stake }}
+        run: |
+          echo "::group::(post)list-data --show-timerange"
           bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
           echo "::endgroup::"
 
