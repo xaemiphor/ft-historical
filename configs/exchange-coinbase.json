@@ -25,7 +25,6 @@
         "rateLimit": 60
     },
     "pair_whitelist": [
-      ".*/USD"
     ],
     "pair_blacklist": [
     ]
