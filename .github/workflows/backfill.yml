@@ -54,11 +54,12 @@ jobs:
           EXCHANGE: ${{ matrix.exchange }}
           STAKE: ${{ matrix.stake }}
         run: |
+          mkdir artifacts
           echo "::group::(pre)list-data --show-timerange"
           bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
           echo "::endgroup::"
 
-      - name: Download - Try 1
+      - name: Download
         id: download1
         shell: bash
         continue-on-error: true
@@ -67,49 +68,12 @@ jobs:
           EXCHANGE: ${{ matrix.exchange }}
           STAKE: ${{ matrix.stake }}
         run: |
-          echo "deadline=$(date +%s -d '+325 minutes')" | tee -a ${GITHUB_OUTPUT}
-          echo "start=$(date +%s)" | tee -a ${GITHUB_OUTPUT}
+          date +%s | tee -a artifacts/start-${{ matrix.exchange }}-${{ matrix.stake }}-${{ env.timerange }}
           echo "::group::download-data"
           ENDRANGE=$(date -u +%Y%m -d '${{ env.timerange }}01 + 1 month')
           bash freqtrade.sh download-data --exchange ${{ matrix.exchange }} -p '.*/${{ matrix.stake }}' --timerange ${{ env.timerange }}01-${ENDRANGE}01 --timeframes ${{ matrix.timeframes }} ${{ matrix.extra || '' }}
           echo "::endgroup::"
-          echo "end=$(date +%s)" | tee -a ${GITHUB_OUTPUT}
-
-      - name: Download - Try 2
-        if: (steps.download1.outputs.end != '' && steps.download1.outputs.end == '') || (fromJSON(steps.download1.outputs.end) >= fromJSON(steps.download1.outputs.deadline))
-        id: download2
-        shell: bash
-        continue-on-error: true
-        timeout-minutes: 330
-        env:
-          EXCHANGE: ${{ matrix.exchange }}
-          STAKE: ${{ matrix.stake }}
-        run: |
-          echo "deadline=$(date +%s -d '+325 minutes')" | tee -a ${GITHUB_OUTPUT}
-          echo "start=$(date +%s)" | tee -a ${GITHUB_OUTPUT}
-          echo "::group::download-data"
-          ENDRANGE=$(date -u +%Y%m -d '${{ env.timerange }}01 + 1 month')
-          bash freqtrade.sh download-data --exchange ${{ matrix.exchange }} -p '.*/${{ matrix.stake }}' --timerange ${{ env.timerange }}01-${ENDRANGE}01 --timeframes ${{ matrix.timeframes }} ${{ matrix.extra || '' }}
-          echo "::endgroup::"
-          echo "end=$(date +%s)" | tee -a ${GITHUB_OUTPUT}
-
-      - name: Download - Try 3
-        if: (steps.download2.outputs.end != '' && steps.download2.outputs.end == '') || (fromJSON(steps.download2.outputs.end) >= fromJSON(steps.download2.outputs.deadline))
-        id: download3
-        shell: bash
-        continue-on-error: true
-        timeout-minutes: 330
-        env:
-          EXCHANGE: ${{ matrix.exchange }}
-          STAKE: ${{ matrix.stake }}
-        run: |
-          echo "deadline=$(date +%s -d '+325 minutes')" | tee -a ${GITHUB_OUTPUT}
-          echo "start=$(date +%s)" | tee -a ${GITHUB_OUTPUT}
-          echo "::group::download-data"
-          ENDRANGE=$(date -u +%Y%m -d '${{ env.timerange }}01 + 1 month')
-          bash freqtrade.sh download-data --exchange ${{ matrix.exchange }} -p '.*/${{ matrix.stake }}' --timerange ${{ env.timerange }}01-${ENDRANGE}01 --timeframes ${{ matrix.timeframes }} ${{ matrix.extra || '' }}
-          echo "::endgroup::"
-          echo "end=$(date +%s)" | tee -a ${GITHUB_OUTPUT}
+          date +%s | tee -a artifacts/end-${{ matrix.exchange }}-${{ matrix.stake }}-${{ env.timerange }}
 
       - name: (post)list-data --show-timerange
         shell: bash
@@ -133,15 +97,33 @@ jobs:
             git commit -m "ci: Autoupdate $(date -u +'%F %T')"
             git push -u origin "$(git branch --show-current):data/${{ matrix.exchange }}/${{ matrix.stake }}/${{ env.timerange }}"
           fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.run_number }}-${{ github.run_attempt }}-${{ matrix.exchange }}-${{ matrix.stake }}-{{ env.timerange }}
+          path: "${{ github.workspace }}/artifacts"
+          retention-days: 1
 
   dispatch:
     runs-on: ubuntu-latest
     needs: [backfill]
     steps:
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: ${{ github.run_number }}-${{ github.run_attempt }}-${{ matrix.exchange }}-*
+          merge-multiple: true
+
       - id: info
         shell: bash
         run: |
-          timerange=$(date -u +%Y%m -d '${{ env.timerange }}01 - 1 month')
+          started=$(find artifacts -type f | grep 'start-' | wc -l)
+          completed=$(find artifacts -type f | grep 'end-' | wc -l)
+          if [[ ${started} -eq ${completed} ]]; then
+            timerange=$(date -u +%Y%m -d '${{ env.timerange }}01 - 1 month')
+          else
+            timerange=${{ env.timerange }}
+          fi
           if [[ "${timerange}" != 2022* ]]; then
             echo "timerange=${timerange}" | tee -a ${GITHUB_OUTPUT}
           fi
