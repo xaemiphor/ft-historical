@@ -57,7 +57,8 @@ jobs:
           bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
           echo "::endgroup::"
 
-      - name: Download
+      - name: Download - Try 1
+        id: download1
         shell: bash
         continue-on-error: true
         timeout-minutes: 330
@@ -65,10 +66,31 @@ jobs:
           EXCHANGE: ${{ matrix.exchange }}
           STAKE: ${{ matrix.stake }}
         run: |
+          echo "deadline=$(date +%s -d '+325 minutes')" | tee -a ${GITHUB_OUTPUT}
+          echo "start=$(date +%s)" | tee -a ${GITHUB_OUTPUT}
           echo "::group::download-data"
           ENDRANGE=$(date -u +%Y%m -d '${{ env.timerange }}01 + 1 month')
           bash freqtrade.sh download-data --exchange ${{ matrix.exchange }} -p '.*/${{ matrix.stake }}' --timerange ${{ env.timerange }}01-${ENDRANGE}01 --timeframes ${{ matrix.timeframes }} ${{ matrix.extra || '' }}
           echo "::endgroup::"
+          echo "end=$(date +%s)" | tee -a ${GITHUB_OUTPUT}
+
+      - name: Download - Try 2
+        if: steps.download1.outputs.end == '' || (fromJSON(steps.download1.outputs.end) >= fromJSON(steps.download1.outputs.deadline))
+        id: download2
+        shell: bash
+        continue-on-error: true
+        timeout-minutes: 330
+        env:
+          EXCHANGE: ${{ matrix.exchange }}
+          STAKE: ${{ matrix.stake }}
+        run: |
+          echo "deadline=$(date +%s -d '+325 minutes')" | tee -a ${GITHUB_OUTPUT}
+          echo "start=$(date +%s)" | tee -a ${GITHUB_OUTPUT}
+          echo "::group::download-data"
+          ENDRANGE=$(date -u +%Y%m -d '${{ env.timerange }}01 + 1 month')
+          bash freqtrade.sh download-data --exchange ${{ matrix.exchange }} -p '.*/${{ matrix.stake }}' --timerange ${{ env.timerange }}01-${ENDRANGE}01 --timeframes ${{ matrix.timeframes }} ${{ matrix.extra || '' }}
+          echo "::endgroup::"
+          echo "end=$(date +%s)" | tee -a ${GITHUB_OUTPUT}
 
       - name: (post)list-data --show-timerange
         shell: bash
