@@ -127,10 +127,10 @@ jobs:
           if [[ "${timerange}" != 2022* ]]; then
             echo "timerange=${timerange}" | tee -a ${GITHUB_OUTPUT}
           fi
-          echo '# DEBUG: ${{ toJSON(github.event) }}'
+          #echo '# DEBUG: ${{ toJSON(github.event) }}'
       - name: Repository Dispatch
         uses: peter-evans/repository-dispatch@main
-        if: steps.info.outputs.timerange != '' && (github.event.event_type == 'chain' || github.event_name == 'workflow_dispatch' )
+        if: steps.info.outputs.timerange != '' && (github.event.action == 'chain' || github.event_name == 'workflow_dispatch' )
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
