@@ -141,7 +141,7 @@ jobs:
           fi
       - name: Repository Dispatch
         uses: peter-evans/repository-dispatch@main
-        if: steps.info.outputs.timerange != '' && (github.event.action == 'chain' || github.event_name == 'workflow_dispatch' )
+        if: steps.info.outputs.timerange != '' && (github.event.action == 'chain-long' || github.event_name == 'workflow_dispatch' )
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
