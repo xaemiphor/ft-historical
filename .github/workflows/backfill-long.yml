@@ -6,8 +6,8 @@ on:
         required: true
   repository_dispatch:
     type:
-      - backfill
-      - chain
+      - backfill-long
+      - chain-long
 
 permissions:
   contents: write
@@ -33,7 +33,7 @@ jobs:
       - id: info
         shell: bash
         run: |
-          CONFIG=$(jq -c -r '[.[]|select(.long|not)]' .github/config/config.json)
+          CONFIG=$(jq -c -r '[.[]|select(.long)]' .github/config/config.json)
           echo "config=${CONFIG}" | tee -a ${GITHUB_OUTPUT}
   backfill:
     runs-on: ubuntu-latest
@@ -145,5 +145,5 @@ jobs:
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
-          event-type: chain
+          event-type: chain-long
           client-payload: '{"timerange": "${{ steps.info.outputs.timerange }}"}'

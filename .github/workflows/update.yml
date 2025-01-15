@@ -111,12 +111,21 @@ jobs:
           if [[ $(date -u +%d) == "01" ]]; then
             echo "timerange=${timerange}" | tee -a ${GITHUB_OUTPUT}
           fi
-      - name: Repository Dispatch
+      - name: Repository Dispatch backfill
         uses: peter-evans/repository-dispatch@main
         if: steps.info.outputs.timerange != ''
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
           event-type: backfill
+          client-payload: '{"timerange": "${{ steps.info.outputs.timerange }}"}'
+
+      - name: Repository Dispatch backfill-long
+        uses: peter-evans/repository-dispatch@main
+        if: steps.info.outputs.timerange != ''
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          event-type: backfill-long
           client-payload: '{"timerange": "${{ steps.info.outputs.timerange }}"}'
 
