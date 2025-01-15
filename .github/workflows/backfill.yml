@@ -5,7 +5,7 @@ on:
         description: '[yyyymm] Target month to download/backfill'
         required: true
   repository_dispatch:
-    type:
+    types:
       - backfill
       - chain
 
