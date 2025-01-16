@@ -57,7 +57,7 @@ jobs:
         continue-on-error: true
         with:
           fetch-depth: 1
-          ref: "data/${{ matrix.exchange }}/${{ matrix.stake }}/${{ env.timerange }}"
+          ref: "${{ matrix.tradingmode }}/${{ matrix.exchange }}/${{ matrix.stake }}/${{ env.timerange }}"
           path: user_data/data/${{ matrix.exchange }}
 
       - name: (pre)list-data --show-timerange
@@ -65,6 +65,7 @@ jobs:
         env:
           EXCHANGE: ${{ matrix.exchange }}
           STAKE: ${{ matrix.stake }}
+          TRADINGMODE: ${{ matrix.tradingmode }}
         run: |
           mkdir artifacts
           echo "::group::(pre)list-data --show-timerange"
@@ -79,6 +80,7 @@ jobs:
         env:
           EXCHANGE: ${{ matrix.exchange }}
           STAKE: ${{ matrix.stake }}
+          TRADINGMODE: ${{ matrix.tradingmode }}
         run: |
           date +%s | tee -a artifacts/start-${{ matrix.exchange }}-${{ matrix.stake }}-${{ env.timerange }}
           echo "::group::download-data"
@@ -92,6 +94,7 @@ jobs:
         env:
           EXCHANGE: ${{ matrix.exchange }}
           STAKE: ${{ matrix.stake }}
+          TRADINGMODE: ${{ matrix.tradingmode }}
         run: |
           echo "::group::(post)list-data --show-timerange"
           bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
@@ -107,7 +110,7 @@ jobs:
           if [[ $(git status --porcelain . | wc -l) -gt 0 ]]; then
             git add .
             git commit -m "ci: Autoupdate $(date -u +'%F %T')"
-            git push -u origin "$(git branch --show-current):data/${{ matrix.exchange }}/${{ matrix.stake }}/${{ env.timerange }}"
+            git push -u origin "$(git branch --show-current):${{ matrix.tradingmode }}/${{ matrix.exchange }}/${{ matrix.stake }}/${{ env.timerange }}"
           fi
       - uses: actions/upload-artifact@v4
         with:

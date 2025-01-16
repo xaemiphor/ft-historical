@@ -53,7 +53,7 @@ jobs:
         continue-on-error: true
         with:
           fetch-depth: 1
-          ref: "data/${{ matrix.exchange }}/${{ matrix.stake }}/${{ steps.info.outputs.timerange }}"
+          ref: "${{ matrix.tradingmode }}/${{ matrix.exchange }}/${{ matrix.stake }}/${{ steps.info.outputs.timerange }}"
           path: user_data/data/${{ matrix.exchange }}
 
       - name: (pre)list-data --show-timerange
@@ -61,6 +61,7 @@ jobs:
         env:
           EXCHANGE: ${{ matrix.exchange }}
           STAKE: ${{ matrix.stake }}
+          TRADINGMODE: ${{ matrix.tradingmode }}
         run: |
           echo "::group::(pre)list-data --show-timerange"
           bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
@@ -73,6 +74,7 @@ jobs:
         env:
           EXCHANGE: ${{ matrix.exchange }}
           STAKE: ${{ matrix.stake }}
+          TRADINGMODE: ${{ matrix.tradingmode }}
         run: |
           echo "::group::download-data"
           bash freqtrade.sh download-data --exchange ${{ matrix.exchange }} -p '.*/${{ matrix.stake }}' --timerange ${{ steps.info.outputs.timerange }}01- --timeframes ${{ matrix.timeframes }} ${{ matrix.extra || '' }}
@@ -83,6 +85,7 @@ jobs:
         env:
           EXCHANGE: ${{ matrix.exchange }}
           STAKE: ${{ matrix.stake }}
+          TRADINGMODE: ${{ matrix.tradingmode }}
         run: |
           echo "::group::(post)list-data --show-timerange"
           bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
@@ -98,7 +101,7 @@ jobs:
           if [[ $(git status --porcelain . | wc -l) -gt 0 ]]; then
             git add .
             git commit -m "ci: Autoupdate $(date -u +'%F %T')"
-            git push -u origin "$(git branch --show-current):data/${{ matrix.exchange }}/${{ matrix.stake }}/${{ steps.info.outputs.timerange }}"
+            git push -u origin "$(git branch --show-current):${{ matrix.tradingmode }}/${{ matrix.exchange }}/${{ matrix.stake }}/${{ steps.info.outputs.timerange }}"
           fi
   dispatch:
     runs-on: ubuntu-latest
