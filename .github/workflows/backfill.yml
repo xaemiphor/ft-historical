@@ -42,7 +42,7 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.info.outputs.config) }}
-        # exchange, stake, timeframes, long
+        # exchange, stake, timeframes, tradingmode, long
     concurrency:
       group: ${{ github.workflow }}-${{ matrix.exchange }}-${{ matrix.stake }}
       cancel-in-progress: false

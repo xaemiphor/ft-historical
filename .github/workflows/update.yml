@@ -36,7 +36,7 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.info.outputs.config) }}
-        # exchange, stake, timeframes
+        # exchange, stake, timeframes, tradingmode
     steps:
       - id: info
         shell: bash
@@ -66,6 +66,11 @@ jobs:
           echo "::group::(pre)list-data --show-timerange"
           bash freqtrade.sh list-data --show-timerange --exchange ${{ matrix.exchange }}
           echo "::endgroup::"
+          if [[ "${{ matrix.exchange }}" == "kraken" ]]; then
+            echo "::group::Purge generated candles to get freqtrade to resume building trades files"
+            find user_data/data/${{ matrix.exchange }} -type f -not -name '*-trades.feather' -delete
+            echo "::endgroup::"
+          fi
 
       - name: Download
         shell: bash
