@@ -68,7 +68,7 @@ jobs:
           echo "::endgroup::"
           if [[ "${{ matrix.exchange }}" == "kraken" ]]; then
             echo "::group::Purge generated candles to get freqtrade to resume building trades files"
-            find user_data/data/${{ matrix.exchange }} -type f -not -name '*-trades.feather' -delete
+            sudo find user_data/data/${{ matrix.exchange }} -type f -not -name '*-trades.feather' -delete
             echo "::endgroup::"
           fi
 
