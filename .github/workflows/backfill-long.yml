@@ -19,6 +19,7 @@ concurrency:
 
 env:
   timerange: ${{ github.event.client_payload.timerange || github.event.inputs.timerange }}
+  cutoff: 2020
 
 jobs:
   info:
@@ -144,7 +145,7 @@ jobs:
           else
             timerange=${{ env.timerange }}
           fi
-          if [[ "${timerange}" != 2022* ]]; then
+          if [[ "${timerange}" != ${{ env.cutoff }}* ]]; then
             echo "timerange=${timerange}" | tee -a ${GITHUB_OUTPUT}
           fi
       - name: Repository Dispatch
